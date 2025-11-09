@@ -33,13 +33,6 @@ CREATE TABLE payment_method (
     FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
 );
 
-CREATE TABLE orders (
-    order_id	SERIAL,
-    customer_id INTEGER,
-    PRIMARY KEY (order_id),
-    FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
-);
-
 CREATE TABLE sticker (
     sticker_id      SERIAL,
     creator_id      INTEGER,
@@ -48,15 +41,6 @@ CREATE TABLE sticker (
     date_created    DATE NOT NULL,
     PRIMARY KEY (sticker_id),
     FOREIGN KEY (creator_id) REFERENCES creator (creator_id)
-);
-
-CREATE TABLE order_items (
-    id          SERIAL,
-    order_id    INTEGER,
-    sticker_id  INTEGER,
-    PRIMARY KEY (id),
-    FOREIGN KEY (order_id) REFERENCES orders (order_id),
-    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id)
 );
 
 CREATE TABLE sticker_sizes (
@@ -92,6 +76,7 @@ CREATE TABLE materials (
     PRIMARY KEY (material_id)
 );
 
+-- maybe change this to an enum instead since we are approaching this differently now
 CREATE TABLE colors (
     color_id    SERIAL,
     color       VARCHAR(30) NOT NULL UNIQUE,
@@ -99,11 +84,31 @@ CREATE TABLE colors (
 );
 
 CREATE TABLE sticker_material (
-    id          SERIAL,
-    sticker_id  INTEGER,
-    material_id INTEGER,
-    color_id    INTEGER,
+    sticker_material_id SERIAL,
+    sticker_id          INTEGER,
+    material_id         INTEGER,
+    color_id            INTEGER,
+    PRIMARY KEY (sticker_material_id),
     FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id),
     FOREIGN KEY (material_id) REFERENCES materials (material_id),
     FOREIGN KEY (color_id) REFERENCES colors (color_id)
+);
+
+CREATE TABLE orders (
+    order_id	SERIAL,
+    customer_id INTEGER,
+    PRIMARY KEY (order_id),
+    FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+);
+
+
+CREATE TABLE order_items (
+    id                  SERIAL,
+    order_id            INTEGER,
+    sticker_id          INTEGER,
+    sticker_material_id INTEGER,
+    PRIMARY KEY (id),
+    FOREIGN KEY (order_id) REFERENCES orders (order_id),
+    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id),
+    FOREIGN KEY (sticker_material_id) REFERENCES sticker_material (sticker_material_id)
 );
