@@ -1,4 +1,4 @@
-CREATE DATABASE sticker_shop;
+CREATE DATABASE sticker_shop_db;
 
 CREATE TABLE creator (
     creator_id      SERIAL, -- PSQL doesn't work with AUTO_INCREMENT so we will need to use SERIAL instead
