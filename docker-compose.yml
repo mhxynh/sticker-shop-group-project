@@ -2,6 +2,9 @@ version: '3.8'
 
 services:
   db:
+    build:
+      context: .
+      dockerfile: ./docker/db/Dockerfile
     image: postgres:15
     container_name: sticker_shop_db
     environment:
@@ -14,7 +17,7 @@ services:
   app:
       build:
         context: .
-        dockerfile: Dockerfile
+        dockerfile: ./docker/app/Dockerfile
       container_name: sticker
       ports:
         - "8000:8000"
