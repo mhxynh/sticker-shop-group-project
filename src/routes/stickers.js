@@ -8,13 +8,6 @@ stickersRouter.get("/all", async (req, res) => {
   res.send(result.rows);
 });
 
-stickersRouter.get("/:id", async (req, res) => {
-  const { id } = req.params;
-
-  const result = await pool.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
-  res.send(result).rows[0];
-});
-
 stickersRouter.get("/creator/:creator_id", async (req, res) => {
   const { creator_id } = req.params;
 
@@ -36,7 +29,7 @@ stickersRouter.post("/create", async (req, res) => {
   const client = await pool.connect();
  
   const { creator_id, name, description, image_data } = req.body;
-  const date_created = new CurrentDate();
+  const date_created = new Date();
 
   if (!creator_id || !name || !description || !image_data) {
     return res.status(400).send("All fields are required");
@@ -44,11 +37,14 @@ stickersRouter.post("/create", async (req, res) => {
 
   try {
     await client.query("BEGIN");
-    const insertStickerText = "INSERT INTO sticker (creator_id, name, description, date_created) VALUES ($1, $2, $3, $4)";
+    // postgres supports returning data after inserting something
+    // https://www.postgresql.org/docs/current/sql-insert.html
+    const insertStickerText = "INSERT INTO sticker (creator_id, name, description, date_created) VALUES ($1, $2, $3, $4) RETURNING sticker_id";
     const stickerRes = await client.query(insertStickerText, [ creator_id, name, description, date_created ]);
     const sticker = stickerRes.rows[0];
     await client.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
     await client.query("COMMIT");
+    return res.sendStatus(200);
   } catch (error) {
     await client.query("ROLLBACK");
     console.log(error);
@@ -56,6 +52,13 @@ stickersRouter.post("/create", async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+stickersRouter.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const result = await pool.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
+  res.send(result).rows[0];
 });
 
 export { stickersRouter };
