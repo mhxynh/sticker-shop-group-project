@@ -58,7 +58,32 @@ stickersRouter.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   const result = await pool.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
-  res.send(result).rows[0];
+  if (!result.rows.length) return res.sendStatus(404);
+
+  // check if it's an image sticker
+  // TODO: add base64 encoding/decoding (when we eventually get around to doing that)
+  // https://www.postgresql.org/docs/current/functions-binarystring.html
+  const imageResult = await pool.query("SELECT image_data FROM image_sticker WHERE sticker_id = $1", [id]);
+  if (imageResult.rows.length) {
+    result.rows[0].sticker = {
+      type: "image",
+      image_data: imageResult.rows[0].image_data
+    }
+    return res.send(result.rows[0]);
+  }
+
+  // check if it's a polygonal sticker
+  const polygonalResult = await pool.query("SELECT * FROM polygonal_sticker WHERE sticker_id = $1", [id]);
+  if (polygonalResult.rows.length) {
+    result.rows[0].sticker = {
+      type: "polygonal",
+      shape: polygonalResult.rows[0].shape
+    }
+    return res.send(result.rows[0]);
+  }
+
+  // shouldn't happen but return a 404 just in case
+  res.sendStatus(404);
 });
 
 export { stickersRouter };
