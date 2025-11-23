@@ -3,10 +3,48 @@ import { pool } from "../db.js";
 
 const stickersRouter = express.Router();
 
+const getStickerbyId = async (id) => {
+  // check if it's an image sticker
+  // TODO: add base64 encoding/decoding (when we eventually get around to doing that)
+  // https://www.postgresql.org/docs/current/functions-binarystring.html
+  const imageResult = await pool.query("SELECT image_data FROM image_sticker WHERE sticker_id = $1", [id]);
+  if (imageResult.rows.length) {
+    return {
+      type: "image",
+      image_data: imageResult.rows[0].image_data
+    }
+  }
+
+  // check if it's a polygonal sticker
+  const polygonalResult = await pool.query("SELECT shape FROM polygonal_sticker WHERE sticker_id = $1", [id]);
+  if (polygonalResult.rows.length) {
+    return {
+      type: "polygonal",
+      shape: polygonalResult.rows[0].shape
+    }
+  }
+
+  // return nothing if no result (shouldn't happen)
+  return {};
+};
+
 stickersRouter.get("/all", async (req, res) => {
   const result = await pool.query("SELECT * FROM sticker");
   res.send(result.rows);
 });
+
+// basically "/all", but for the browse stickers page
+stickersRouter.get("/browse", async (req, res) => {
+  const result = await pool.query("SELECT sticker_id, name FROM sticker");
+
+  console.log(result.rows);
+
+  for (let i = 0; i < result.rows.length; i++) {
+    result.rows[i].sticker = await getStickerbyId(result.rows[i].sticker_id);
+  }
+
+  return res.send(result.rows);
+})
 
 stickersRouter.get("/creator/:creator_id", async (req, res) => {
   const { creator_id } = req.params;
@@ -60,30 +98,13 @@ stickersRouter.get("/:id", async (req, res) => {
   const result = await pool.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
   if (!result.rows.length) return res.sendStatus(404);
 
-  // check if it's an image sticker
-  // TODO: add base64 encoding/decoding (when we eventually get around to doing that)
-  // https://www.postgresql.org/docs/current/functions-binarystring.html
-  const imageResult = await pool.query("SELECT image_data FROM image_sticker WHERE sticker_id = $1", [id]);
-  if (imageResult.rows.length) {
-    result.rows[0].sticker = {
-      type: "image",
-      image_data: imageResult.rows[0].image_data
-    }
-    return res.send(result.rows[0]);
-  }
+  // get polygonal/image data
+  const stickerData = await getStickerbyId(result.rows[0].sticker_id);
 
-  // check if it's a polygonal sticker
-  const polygonalResult = await pool.query("SELECT shape FROM polygonal_sticker WHERE sticker_id = $1", [id]);
-  if (polygonalResult.rows.length) {
-    result.rows[0].sticker = {
-      type: "polygonal",
-      shape: polygonalResult.rows[0].shape
-    }
-    return res.send(result.rows[0]);
-  }
+  if (!stickerData.type) return res.sendStatus(404);
 
-  // shouldn't happen but return a 404 just in case
-  res.sendStatus(404);
+  result.rows[0].sticker = stickerData;
+  res.send(result.rows[0]);
 });
 
 export { stickersRouter };
