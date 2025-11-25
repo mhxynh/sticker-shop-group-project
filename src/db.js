@@ -6,13 +6,14 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
   database: process.env.DB_NAME,
-}
-);
+});
 
 export const query = async (text, params) => {
   return pool.query(text, params);
 }
 
-export const getClient = async () => { return await pool.connect();}
+export const getClient = async () => { 
+  return await pool.connect();
+}
 
 export { pool };
