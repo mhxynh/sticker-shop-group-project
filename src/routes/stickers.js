@@ -1,17 +1,20 @@
 import express from "express";
+import multer from "multer";
 import * as db from "../db.js";
+
+const upload = multer();
 
 const stickersRouter = express.Router();
 
 const getStickerbyId = async (id) => {
   // check if it's an image sticker
-  // TODO: add base64 encoding/decoding (when we eventually get around to doing that)
+  // use the postgres encode function to encode the image in base64
   // https://www.postgresql.org/docs/current/functions-binarystring.html
-  const imageResult = await db.query("SELECT image_data FROM image_sticker WHERE sticker_id = $1", [id]);
+  const imageResult = await db.query("SELECT encode(image_data, 'base64') FROM image_sticker WHERE sticker_id = $1", [id]);
   if (imageResult.rows.length) {
     return {
       type: "image",
-      image_data: imageResult.rows[0].image_data
+      image_data: imageResult.rows[0].encode
     }
   }
 
@@ -61,30 +64,35 @@ stickersRouter.get("/polygonal", async (req, res) => {
   res.send(result.rows);
 });
 
-stickersRouter.post("/create", async (req, res) => {
-  const { creator_id, name, description, image_data } = req.body;
+// multer stuff https://github.com/expressjs/multer
+stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
+  const client = await db.getClient();
+
+  const { creator_id, name, description } = req.body;
   const date_created = new Date();
 
-  if (!creator_id || !name || !description || !image_data) {
+  if (!creator_id || !name || !description || !req.file) {
     return res.status(400).send("All fields are required");
   }
 
+  const image_data = req.file.buffer;
+
   try {
-    await getClient.query("BEGIN");
+    await client.query("BEGIN");
     // postgres supports returning data after inserting something
     // https://www.postgresql.org/docs/current/sql-insert.html
     const insertStickerText = "INSERT INTO sticker (creator_id, name, description, date_created) VALUES ($1, $2, $3, $4) RETURNING sticker_id";
-    const stickerRes = await getClient.query(insertStickerText, [ creator_id, name, description, date_created ]);
+    const stickerRes = await client.query(insertStickerText, [ creator_id, name, description, date_created ]);
     const sticker = stickerRes.rows[0];
-    await getClient.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
-    await getClient.query("COMMIT");
+    await client.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
+    await client.query("COMMIT");
     return res.sendStatus(200);
   } catch (error) {
-    await getClient.query("ROLLBACK");
+    await client.query("ROLLBACK");
     console.log(error);
     res.status(500).send("Error creating sticker");
   } finally {
-    getClient.release();
+    client.release();
   }
 });
 
