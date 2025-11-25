@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { pool } from "../db.js";
+import * as db from "../db.js";
 
 const upload = multer();
 
@@ -10,7 +10,7 @@ const getStickerbyId = async (id) => {
   // check if it's an image sticker
   // use the postgres encode function to encode the image in base64
   // https://www.postgresql.org/docs/current/functions-binarystring.html
-  const imageResult = await pool.query("SELECT encode(image_data, 'base64') FROM image_sticker WHERE sticker_id = $1", [id]);
+  const imageResult = await db.query("SELECT encode(image_data, 'base64') FROM image_sticker WHERE sticker_id = $1", [id]);
   if (imageResult.rows.length) {
     return {
       type: "image",
@@ -19,7 +19,7 @@ const getStickerbyId = async (id) => {
   }
 
   // check if it's a polygonal sticker
-  const polygonalResult = await pool.query("SELECT shape FROM polygonal_sticker WHERE sticker_id = $1", [id]);
+  const polygonalResult = await db.query("SELECT shape FROM polygonal_sticker WHERE sticker_id = $1", [id]);
   if (polygonalResult.rows.length) {
     return {
       type: "polygonal",
@@ -32,13 +32,13 @@ const getStickerbyId = async (id) => {
 };
 
 stickersRouter.get("/all", async (req, res) => {
-  const result = await pool.query("SELECT * FROM sticker");
+  const result = await db.query("SELECT * FROM sticker");
   res.send(result.rows);
 });
 
 // basically "/all", but for the browse stickers page
 stickersRouter.get("/browse", async (req, res) => {
-  const result = await pool.query("SELECT sticker_id, name FROM sticker");
+  const result = await db.query("SELECT sticker_id, name FROM sticker");
 
   for (let i = 0; i < result.rows.length; i++) {
     result.rows[i].sticker = await getStickerbyId(result.rows[i].sticker_id);
@@ -50,23 +50,23 @@ stickersRouter.get("/browse", async (req, res) => {
 stickersRouter.get("/creator/:creator_id", async (req, res) => {
   const { creator_id } = req.params;
 
-  const result = await pool.query("SELECT * FROM sticker WHERE creator_id = $1", [creator_id]);
+  const result = await db.query("SELECT * FROM sticker WHERE creator_id = $1", [creator_id]);
   res.send(result.rows);
 });
 
 stickersRouter.get("/image_sticker", async (req, res) => {
-  const result = await pool.query("SELECT * FROM sticker, image_sticker WHERE sticker.sticker_id = image_sticker.sticker_id");
+  const result = await db.query("SELECT * FROM sticker, image_sticker WHERE sticker.sticker_id = image_sticker.sticker_id");
   res.send(result.rows);
 });
 
 stickersRouter.get("/polygonal", async (req, res) => {
-  const result = await pool.query("SELECT * FROM sticker, polygonal_sticker WHERE sticker.sticker_id = polygonal_sticker.sticker_id");
+  const result = await db.query("SELECT * FROM sticker, polygonal_sticker WHERE sticker.sticker_id = polygonal_sticker.sticker_id");
   res.send(result.rows);
 });
 
 // multer stuff https://github.com/expressjs/multer
 stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
-  const client = await pool.connect();
+  const client = await db.getClient();
 
   const { creator_id, name, description } = req.body;
   const date_created = new Date();
@@ -99,7 +99,7 @@ stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
 stickersRouter.get("/:id", async (req, res) => {
   const { id } = req.params;
 
-  const result = await pool.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
+  const result = await db.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
   if (!result.rows.length) return res.sendStatus(404);
 
   // get polygonal/image data
