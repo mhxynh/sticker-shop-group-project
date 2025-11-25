@@ -1,12 +1,19 @@
 import { Pool } from "pg";
 
-// TODO: use an .env file instead of hardcoding the config
 const pool = new Pool({
-  user: "postgres",
-  password: "password",
-  host: "localhost",
-  port: 5432,
-  database: "sticker_shop_db"
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
 });
+
+export const query = async (text, params) => {
+  return pool.query(text, params);
+}
+
+export const getClient = async () => { 
+  return await pool.connect();
+}
 
 export { pool };
