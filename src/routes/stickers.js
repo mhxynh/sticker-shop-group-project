@@ -75,7 +75,7 @@ stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
     return res.status(400).send("All fields are required");
   }
 
-  const imageData = req.file.imageData;
+  const image_data = req.file.buffer;
 
   try {
     await client.query("BEGIN");
@@ -84,7 +84,7 @@ stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
     const insertStickerText = "INSERT INTO sticker (creator_id, name, description, date_created) VALUES ($1, $2, $3, $4) RETURNING sticker_id";
     const stickerRes = await client.query(insertStickerText, [ creator_id, name, description, date_created ]);
     const sticker = stickerRes.rows[0];
-    await client.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, imageData]);
+    await client.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
     await client.query("COMMIT");
     return res.sendStatus(200);
   } catch (error) {
