@@ -68,16 +68,14 @@ stickersRouter.get("/polygonal", async (req, res) => {
 stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
   const client = await pool.connect();
 
-  console.log(req.body);
-  console.log(req.file);
- 
   const { creator_id, name, description } = req.body;
-  const imageData = req.file.imageData;
   const date_created = new Date();
 
-  if (!creator_id || !name || !description || !imageData) {
+  if (!creator_id || !name || !description || !req.file) {
     return res.status(400).send("All fields are required");
   }
+
+  const imageData = req.file.imageData;
 
   try {
     await client.query("BEGIN");
