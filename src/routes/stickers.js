@@ -8,13 +8,13 @@ const stickersRouter = express.Router();
 
 const getStickerbyId = async (id) => {
   // check if it's an image sticker
-  // TODO: add base64 encoding/decoding (when we eventually get around to doing that)
+  // use the postgres encode function to encode the image in base64
   // https://www.postgresql.org/docs/current/functions-binarystring.html
-  const imageResult = await pool.query("SELECT image_data FROM image_sticker WHERE sticker_id = $1", [id]);
+  const imageResult = await pool.query("SELECT encode(image_data, 'base64') FROM image_sticker WHERE sticker_id = $1", [id]);
   if (imageResult.rows.length) {
     return {
       type: "image",
-      image_data: imageResult.rows[0].image_data
+      image_data: imageResult.rows[0].encode
     }
   }
 
