@@ -96,6 +96,81 @@ stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
   }
 });
 
+stickersRouter.put("/:id", async (req, res) => {
+  const client = await db.getClient();
+  const { id } = req.params;
+  const { name, description } = req.body;
+
+
+  if (!name && !description) {
+    return res.status(400).send("At least a name or description is required");
+  }
+
+  try {
+    await client.query("BEGIN");
+    const stickerExists = await client.query("SELECT sticker_id FROM sticker WHERE sticker_id = $1", [id]);
+    if (stickerExists.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.sendStatus(404);
+    }
+    let paramIndex = 1;
+    let stickerUpdates = [];
+    const updatesParams = [];
+    
+    if (name) {
+      stickerUpdates.push(`name = $${paramIndex}`);
+      updatesParams.push(name);
+      paramIndex++;
+    }
+    if (description) {
+      stickerUpdates.push(`description = $${paramIndex}`);
+      updatesParams.push(description);
+      paramIndex++;
+    }
+    if (stickerUpdates.length) {
+      updatesParams.push(id);
+      const updateText = `UPDATE sticker SET ${stickerUpdates.join(", ")} WHERE sticker_id = $${paramIndex}`;
+      await client.query(updateText, updatesParams);
+    }
+
+    await client.query("COMMIT");
+    return res.sendStatus(200);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.log(error);
+    return res.status(500).send("Error updating sticker");
+  } finally {
+    client.release();
+  }
+});
+
+stickersRouter.delete("/:id", async (req, res) => {
+  const client = await db.getClient();
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).send("Sticker ID is required");
+  }
+
+  try {
+    await client.query("BEGIN");
+    const stickerExists = await client.query("SELECT sticker_id FROM sticker WHERE sticker_id = $1", [id]);
+    if (stickerExists.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.sendStatus(404);
+    }
+    await client.query("UPDATE sticker SET is_deleted = TRUE WHERE sticker_id = $1", [id]);
+    await client.query("COMMIT");
+    return res.sendStatus(200);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.log(error);
+    return res.status(500).send("Error deleting sticker");
+  } finally {
+    client.release();
+  }
+});
+
 stickersRouter.get("/:id", async (req, res) => {
   const { id } = req.params;
 
