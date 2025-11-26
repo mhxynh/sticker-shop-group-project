@@ -47,10 +47,10 @@ stickersRouter.get("/browse", async (req, res) => {
   return res.send(result.rows);
 })
 
-stickersRouter.get("/creator/:account_id", async (req, res) => {
-  const { account_id } = req.params;
+stickersRouter.get("/creator/:creator_id", async (req, res) => {
+  const { creator_id } = req.params;
 
-  const result = await db.query("SELECT * FROM sticker WHERE account_id = $1", [account_id]);
+  const result = await db.query("SELECT * FROM sticker WHERE creator_id = $1", [creator_id]);
   res.send(result.rows);
 });
 
@@ -68,10 +68,10 @@ stickersRouter.get("/polygonal", async (req, res) => {
 stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
   const client = await db.getClient();
 
-  const { account_id, name, description } = req.body;
+  const { creator_id, name, description } = req.body;
   const date_created = new Date();
 
-  if (!account_id || !name || !description || !req.file) {
+  if (!creator_id || !name || !description || !req.file) {
     return res.status(400).send("All fields are required");
   }
 
@@ -81,8 +81,8 @@ stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
     await client.query("BEGIN");
     // postgres supports returning data after inserting something
     // https://www.postgresql.org/docs/current/sql-insert.html
-    const insertStickerText = "INSERT INTO sticker (account_id, name, description, date_created) VALUES ($1, $2, $3, $4) RETURNING sticker_id";
-    const stickerRes = await client.query(insertStickerText, [ account_id, name, description, date_created ]);
+    const insertStickerText = "INSERT INTO sticker (creator_id, name, description, date_created) VALUES ($1, $2, $3, $4) RETURNING sticker_id";
+    const stickerRes = await client.query(insertStickerText, [ creator_id, name, description, date_created ]);
     const sticker = stickerRes.rows[0];
     await client.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
     await client.query("COMMIT");
