@@ -7,6 +7,8 @@ const upload = multer();
 const stickersRouter = express.Router();
 
 const getStickerbyId = async (id) => {
+  const materials = await db.query("SELECT * FROM materials");
+  const colors = await db.query("SELECT * FROM colors");
   // check if it's an image sticker
   // use the postgres encode function to encode the image in base64
   // https://www.postgresql.org/docs/current/functions-binarystring.html
@@ -14,7 +16,9 @@ const getStickerbyId = async (id) => {
   if (imageResult.rows.length) {
     return {
       type: "image",
-      image_data: imageResult.rows[0].encode
+      image_data: imageResult.rows[0].encode,
+      materials: materials.rows,
+      colors: colors.rows
     }
   }
 
@@ -23,7 +27,9 @@ const getStickerbyId = async (id) => {
   if (polygonalResult.rows.length) {
     return {
       type: "polygonal",
-      shape: polygonalResult.rows[0].shape
+      shape: polygonalResult.rows[0].shape,
+      materials: materials.rows,
+      colors: colors.rows
     }
   }
 
