@@ -1,3 +1,6 @@
+# putting the Dockerfiles into their own directory so that postgres can have its own dockerfile
+# https://www.baeldung.com/ops/multiple-dockerfiles
+
 FROM node:22-alpine
 
 WORKDIR /app
@@ -18,4 +21,4 @@ USER node
 EXPOSE 3000
 
 # Default command
-CMD ["npm", "start"]
+CMD ["npm", "run", "start-docker"]

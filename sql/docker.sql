@@ -1,0 +1,211 @@
+-- i got lazy
+-- this is basically sticker_shop_tables.sql and insert.sql combined into one file, but with the create database
+-- removed
+-- we'll need to update this every time we change the sql files (just copy and paste sticker_shop_tables.sql and insert.sql)
+CREATE TABLE account (
+    account_id     SERIAL,
+    first_name      VARCHAR(100) NOT NULL,
+    middle_name     VARCHAR(100),
+    last_name       VARCHAR(100) NOT NULL,
+    email_address   VARCHAR(256) NOT NULL UNIQUE,
+    password_hash   VARCHAR(256) NOT NULL,
+    phone_number    VARCHAR(20) NOT NULL UNIQUE,
+    street          VARCHAR(100),
+    city            VARCHAR(50),
+    postal_code	    VARCHAR(20),
+    is_creator    BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (account_id)
+);
+
+CREATE TABLE payment_method (
+    payment_id	SERIAL,
+    account_id	INTEGER,
+    method		VARCHAR(64),
+    PRIMARY KEY (payment_id),
+    FOREIGN KEY (account_id) REFERENCES account (account_id)
+);
+
+CREATE TABLE sticker (
+    sticker_id      SERIAL,
+    account_id      INTEGER,
+    name            VARCHAR(64) NOT NULL,
+    description	    VARCHAR(256),
+    date_created    DATE NOT NULL,
+    PRIMARY KEY (sticker_id),
+    FOREIGN KEY (account_id) REFERENCES account (account_id)
+);
+
+CREATE TABLE sticker_sizes (
+    size_id     SERIAL,
+    length      DECIMAL (5, 2) NOT NULL, -- stored in centimeters
+    width       DECIMAL (5, 2) NOT NULL,
+    sticker_id  INTEGER,
+    PRIMARY KEY (size_id),
+    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id),
+    CHECK (length <= 100), -- max 100 centimeters or 1 meter
+    CHECK (width <= 100)
+);
+
+CREATE TABLE image_sticker (
+    sticker_id  INTEGER,
+    image_data  bytea NOT NULL, -- Postgres also doesn't have BLOB so we will use bytea
+                                -- https://www.postgresql.org/docs/current/datatype-binary.html
+    PRIMARY KEY (sticker_id),
+    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id)
+);
+
+CREATE TABLE polygonal_sticker (
+    sticker_id  INTEGER,
+    shape       VARCHAR(32) NOT NULL,
+    PRIMARY KEY (sticker_id),
+    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id)
+);
+
+CREATE TABLE materials (
+    material_id     SERIAL,
+    material        VARCHAR(64) NOT NULL UNIQUE,
+    price           DECIMAL(4, 2) NOT NULL,
+    PRIMARY KEY (material_id)
+);
+
+-- maybe change this to an enum instead since we are approaching this differently now
+CREATE TABLE colors (
+    color_id    SERIAL,
+    color       VARCHAR(30) NOT NULL UNIQUE,
+    PRIMARY KEY (color_id)
+);
+
+CREATE TABLE sticker_material (
+    sticker_material_id SERIAL,
+    sticker_id          INTEGER,
+    material_id         INTEGER,
+    color_id            INTEGER,
+    PRIMARY KEY (sticker_material_id),
+    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id),
+    FOREIGN KEY (material_id) REFERENCES materials (material_id),
+    FOREIGN KEY (color_id) REFERENCES colors (color_id)
+);
+
+CREATE TABLE orders (
+    order_id	SERIAL,
+    account_id INTEGER,
+    PRIMARY KEY (order_id),
+    FOREIGN KEY (account_id) REFERENCES account (account_id)
+);
+
+CREATE TABLE order_items (
+    id                  SERIAL,
+    order_id            INTEGER,
+    sticker_id          INTEGER,
+    sticker_material_id INTEGER,
+    PRIMARY KEY (id),
+    FOREIGN KEY (order_id) REFERENCES orders (order_id),
+    FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id),
+    FOREIGN KEY (sticker_material_id) REFERENCES sticker_material (sticker_material_id)
+);
+
+INSERT INTO account (first_name, last_name, email_address, password_hash, phone_number, is_creator)
+VALUES ('Sticker', 'Shop', 'thestickershop@stickershop.com', 'password', '123-456-7890', TRUE);
+
+INSERT INTO account (first_name, middle_name, last_name, email_address, password_hash, phone_number, is_creator) 
+VALUES ('Benillas', 'H', 'Nguyen','bennguyen123456@sticker.com', 'benillas', '123-456-7891', TRUE);
+
+INSERT INTO account (first_name, last_name, email_address, password_hash, phone_number, street, city, postal_code) 
+VALUES ('John', 'Doe', 'johndoe101@gmail.com', 'johndoe', '987-654-3210', '123 sticker St', 'Stickerfield', '12345');
+
+INSERT INTO sticker (account_id, name, description, date_created)
+VALUES (1, 'Square Sticker', 'A sticker that is a shape of a square.', current_date); -- use current_date https://www.postgresql.org/docs/8.2/functions-datetime.html
+INSERT INTO polygonal_sticker
+VALUES (1, 'square');
+
+INSERT INTO sticker (account_id, name, description, date_created)
+VALUES (1, 'Circle Sticker', 'A sticker that is a shape of a circle.', current_date);
+INSERT INTO polygonal_sticker
+VALUES (2, 'circle');
+
+INSERT INTO sticker (account_id, name, description, date_created)
+VALUES (1, 'Triangle Sticker', 'A sticker that is a shape of a triangle.', current_date);
+INSERT INTO polygonal_sticker
+VALUES (3, 'triangle');
+
+INSERT INTO sticker (account_id, name, description, date_created)
+VALUES (1, 'Heart Sticker', 'A sticker that is a shape of a heart.', current_date);
+INSERT INTO polygonal_sticker
+VALUES (4, 'heart');
+
+-- image stickers
+INSERT INTO sticker (account_id, name, description, date_created)
+VALUES (2, 'Jotchua', 'jotchua', current_date);
+-- had some images encoded in base64 so I'm using that instead of a bytea string
+-- also use the postgres decode() function to convert it from base64 into bytea
+-- https://www.postgresql.org/docs/current/functions-binarystring.html
+-- (maybe I should insert it as bytea or store the image files in a folder somewhere)
+INSERT INTO image_sticker (sticker_id, image_data)
+VALUES (5, decode('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', 'base64'));
+
+-- TODO: ask ben to insert the image later
+INSERT INTO sticker (account_id, name, description, date_created)
+VALUES (2, 'Among Us Sticker', 'A red sussy imposter sticker that keeps you alert.', current_date);
+INSERT INTO image_sticker (sticker_id, image_data)
+VALUES (6, 'pretend this is an image byte data');
+
+INSERT INTO sticker_sizes (length, width, sticker_id)
+VALUES(10, 10, 1);
+INSERT INTO sticker_sizes (length, width, sticker_id)
+VALUES(5, 5, 2);
+INSERT INTO sticker_sizes (length, width, sticker_id)
+VALUES(15, 15, 3);
+INSERT INTO sticker_sizes (length, width, sticker_id)
+VALUES(4, 2, 4);
+INSERT INTO sticker_sizes (length, width, sticker_id)
+VALUES(10, 10, 5);
+
+-- materials based on what RedBubble has
+-- https://www.redbubble.com/i/sticker/Hang-on-Let-me-overthink-this-by-chestify/29205665.EJUG5
+INSERT INTO materials (material, price)
+VALUES ('vinyl-glossy', 1.00);
+INSERT INTO materials (material, price)
+VALUES ('vinyl-matte', 0.75);
+INSERT INTO materials (material, price)
+VALUES ('vinyl-holographic', 1.25);
+
+INSERT INTO colors (color)
+VALUES ('red');
+INSERT INTO colors (color)
+VALUES ('orange');
+INSERT INTO colors (color)
+VALUES ('yellow');
+INSERT INTO colors (color)
+VALUES ('green');
+INSERT INTO colors (color)
+VALUES ('blue');
+INSERT INTO colors (color)
+VALUES ('purple');
+INSERT INTO colors (color)
+VALUES ('black');
+INSERT INTO colors (color)
+VALUES ('white');
+
+INSERT INTO orders (account_id)
+VALUES (1);
+-- glossy red square sticker
+INSERT INTO sticker_material (sticker_id, material_id, color_id)
+VALUES (1, 1, 1);
+INSERT INTO order_items (order_id, sticker_id, sticker_material_id)
+VALUES (1, 1, 1);
+-- glossy red circle sticker
+INSERT INTO sticker_material (sticker_id, material_id, color_id)
+VALUES (2, 1, 1);
+INSERT INTO order_items (order_id, sticker_id, sticker_material_id)
+VALUES (1, 2, 2);
+
+INSERT INTO orders (account_id)
+VALUES (1);
+-- amongus
+INSERT INTO sticker_material (sticker_id, material_id, color_id)
+VALUES (4, 1, 1);
+INSERT INTO order_items (order_id, sticker_id, sticker_material_id)
+VALUES (2, 6, 3);
+
+INSERT INTO payment_method (account_id, method)
+VALUES (1, 'test');
