@@ -1,46 +1,36 @@
 CREATE DATABASE sticker_shop_db;
 
-CREATE TABLE creator (
-    creator_id      SERIAL, -- PSQL doesn't work with AUTO_INCREMENT so we will need to use SERIAL instead
-                            -- https://www.postgresql.org/docs/current/datatype-numeric.html#DATATYPE-SERIAL
-    first_name      VARCHAR(100) NOT NULL,
-    middle_name	    VARCHAR(100),
-    last_name	    VARCHAR(100) NOT NULL,
-    email_address   VARCHAR(256) NOT NULL UNIQUE,
-    phone_number    VARCHAR(20) NOT NULL UNIQUE,
-    payout_method   VARCHAR(50),
-    PRIMARY KEY (creator_id)
-);
-
-CREATE TABLE customer (
-    customer_id     SERIAL,
+CREATE TABLE account (
+    account_id     SERIAL,
     first_name      VARCHAR(100) NOT NULL,
     middle_name     VARCHAR(100),
     last_name       VARCHAR(100) NOT NULL,
     email_address   VARCHAR(256) NOT NULL UNIQUE,
+    password_hash   VARCHAR(256) NOT NULL,
     phone_number    VARCHAR(20) NOT NULL UNIQUE,
     street          VARCHAR(100),
     city            VARCHAR(50),
     postal_code	    VARCHAR(20),
-    PRIMARY KEY (customer_id)
+    is_creator    BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (account_id)
 );
 
 CREATE TABLE payment_method (
     payment_id	SERIAL,
-    customer_id	INTEGER,
+    account_id	INTEGER,
     method		VARCHAR(64),
     PRIMARY KEY (payment_id),
-    FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+    FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
 
 CREATE TABLE sticker (
     sticker_id      SERIAL,
-    creator_id      INTEGER,
+    account_id      INTEGER,
     name            VARCHAR(64) NOT NULL,
     description	    VARCHAR(256),
     date_created    DATE NOT NULL,
     PRIMARY KEY (sticker_id),
-    FOREIGN KEY (creator_id) REFERENCES creator (creator_id)
+    FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
 
 CREATE TABLE sticker_sizes (
@@ -96,9 +86,9 @@ CREATE TABLE sticker_material (
 
 CREATE TABLE orders (
     order_id	SERIAL,
-    customer_id INTEGER,
+    account_id INTEGER,
     PRIMARY KEY (order_id),
-    FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+    FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
 
 CREATE TABLE order_items (
