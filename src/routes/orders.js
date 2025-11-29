@@ -77,6 +77,11 @@ ordersRouter.delete("/:id", async (req, res) => {
 });
 
 ordersRouter.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const result = await db.query("SELECT * FROM orders WHERE order_id = $1", [id]);
+  if (result.rowCount === 0) {
+    return res.sendStatus(404);
+  }
   const {order_id, account_id } = result.rows[0];
   const orderItems = await db.query("SELECT * FROM order_items WHERE order_id = $1", [order_id]);
   res.json({ order_id, account_id, items: orderItems.rows });
