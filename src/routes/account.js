@@ -4,19 +4,38 @@ import * as db from "../db.js";
 const accountRouter = express.Router();
 
 accountRouter.post("/signup", async (req, res) => {
-  const { firstName, lastName, email, phoneNumber, street, city, postalCode, password } = req.body;
+  const { firstName, middleName, lastName, email, phoneNumber, street, city, postalCode, password, isCreator } = req.body;
 
-  if (!firstName || !lastName || !email || !phoneNumber || !street || !city || !postalCode|| !password) {
-    return res.status(400).send("All fields are required");
+  if (!firstName || !lastName || !email || !phoneNumber || !street || !city || !postalCode || !password) {
+    return res.status(400).send("All required fields must be provided");
   }
 
-  const result = await db.query(
-    "INSERT INTO account (first_name, last_name, email_address, phone_number, street, city, postal_code, password_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-    [firstName, lastName, email, phoneNumber, street, city, postalCode, password]
-  );
-  const user = result.rows[0];
-  if (user) delete user.password_hash;
-  res.send(user);
+  try {
+    const result = await db.query(
+      `INSERT INTO account (
+        first_name, middle_name, last_name, email_address, password_hash,
+        phone_number, street, city, postal_code, is_creator
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [
+        firstName,
+        middleName ?? null,
+        lastName,
+        email,
+        password,
+        phoneNumber,
+        street,
+        city,
+        postalCode,
+        isCreator ?? false,
+      ]
+    );
+
+    const user = result.rows[0];
+    if (user) delete user.password_hash;
+    res.status(201).send(user);
+  } catch (err) {
+    res.sendStatus(500);
+  }
 });
 
 accountRouter.post("/login", async (req, res) => {
