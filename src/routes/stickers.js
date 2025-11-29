@@ -183,6 +183,11 @@ stickersRouter.get("/:id", async (req, res) => {
   const result = await db.query("SELECT * FROM sticker WHERE sticker_id = $1", [id]);
   if (!result.rows.length) return res.sendStatus(404);
 
+  const creator = await db.query("SELECT first_name FROM account WHERE account_id = $1", [result.rows[0].account_id]);
+  if (!creator.rows.length) return res.sendStatus(500);
+
+  result.rows[0].creator = creator.rows[0].first_name;
+
   // get polygonal/image data
   const stickerData = await getStickerbyId(result.rows[0].sticker_id);
 
