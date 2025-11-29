@@ -4,15 +4,7 @@ import * as db from "../db.js";
 const ordersRouter = express.Router();
 
 ordersRouter.get("/all", async (req, res) => {
-  const accountIdRaw = req.query.accountId;
-  // checks to validate accountId and prevent SQL injection
-  if (!accountIdRaw) {
-    return res.status(400).json({ error: "Missing query parameter: accountId" });
-  }
-  const accountId = Number(accountIdRaw);
-  if (!Number.isInteger(accountId) || accountId <= 0) {
-    return res.status(400).json({ error: "Invalid accountId" });
-  }
+  const accountId = req.query.accountId;
 
   try {
     const result = await db.query("SELECT * FROM orders WHERE account_id = $1", [accountId]);
@@ -92,20 +84,7 @@ ordersRouter.delete("/:id", async (req, res) => {
 });
 
 ordersRouter.get("/:id", async (req, res) => {
-  const { id } = req.params;
-  const accountIdRaw = req.query.accountId;
-  if (!accountIdRaw) {
-    return res.status(400).json({ error: "Missing query parameter: accountId" });
-  }
-
-  const orderId = Number(id);
-  const accountId = Number(accountIdRaw);
-  if (!Number.isInteger(orderId) || orderId <= 0) {
-    return res.status(400).json({ error: "Invalid order id" });
-  }
-  if (!Number.isInteger(accountId) || accountId <= 0) {
-    return res.status(400).json({ error: "Invalid accountId" });
-  }
+  const { orderId, accountId} = req.params;
 
   try {
     const result = await db.query(
