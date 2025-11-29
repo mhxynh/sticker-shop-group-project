@@ -10,16 +10,16 @@ ordersRouter.get("/all", async (req, res) => {
 
 ordersRouter.post("/", async (req, res) => {
   const client = await db.getClient();
-  const { accountId, orderId, items } = req.body;
+  const { accountId, items } = req.body;
 
   try {
     await client.query("BEGIN");
     // https://www.postgresql.org/docs/current/functions-conditional.html#FUNCTIONS-COALESCE-NVL-IFNULL
     const insertText = `
-      INSERT INTO orders (account_id, order_Id)
-      VALUES ($1, $2)
+      INSERT INTO orders (account_id)
+      VALUES ($1)
       RETURNING *`;
-    const values = [accountId, orderId];
+    const values = [accountId];
     const result = await client.query(insertText, values);
     const order = result.rows[0];
 
@@ -51,7 +51,7 @@ ordersRouter.post("/", async (req, res) => {
     }
 
     await client.query("COMMIT");
-    res.status(201).location(`/orders/${order.order_id}`).json(order);
+    res.json(order);
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Error creating order:", err);
