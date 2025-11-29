@@ -4,7 +4,7 @@ import * as db from "../db.js";
 const ordersRouter = express.Router();
 
 ordersRouter.get("/all", async (req, res) => {
-  const result = await db.query("SELECT * FROM orders");
+  const result = await db.query("SELECT * FROM orders WHERE account_id = $1", [req.query.accountId]);
   res.json(result.rows);
 });
 
@@ -78,7 +78,7 @@ ordersRouter.delete("/:id", async (req, res) => {
 
 ordersRouter.get("/:id", async (req, res) => {
   const { id } = req.params;
-  const result = await db.query("SELECT * FROM orders WHERE order_id = $1", [id]);
+  const result = await db.query("SELECT * FROM orders WHERE order_id = $1 AND account_id = $2", [id, req.query.accountId]);
   if (result.rowCount === 0) {
     return res.sendStatus(404);
   }
