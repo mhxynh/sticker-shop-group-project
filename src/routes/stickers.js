@@ -48,7 +48,7 @@ stickersRouter.get("/all", async (req, res) => {
 
 // basically "/all", but for the browse stickers page
 stickersRouter.get("/browse", async (req, res) => {
-  const result = await db.query("SELECT sticker_id, name FROM sticker");
+  const result = await db.query("SELECT sticker_id, name FROM sticker WHERE is_deleted = FALSE");
 
   for (let i = 0; i < result.rows.length; i++) {
     result.rows[i].sticker = await getStickerbyId(result.rows[i].sticker_id);
@@ -167,10 +167,6 @@ stickersRouter.delete("/:id", async (req, res) => {
   try {
     await client.query("BEGIN");
     const stickerExists = await client.query("SELECT sticker_id FROM sticker WHERE sticker_id = $1", [id]);
-    if (stickerExists.rowCount === 0) {
-      await client.query("ROLLBACK");
-      return res.sendStatus(404);
-    }
     await client.query("UPDATE sticker SET is_deleted = TRUE WHERE sticker_id = $1", [id]);
     await client.query("COMMIT");
     return res.sendStatus(200);

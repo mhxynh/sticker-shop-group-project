@@ -29,6 +29,7 @@ CREATE TABLE sticker (
     name            VARCHAR(64) NOT NULL,
     description	    VARCHAR(256),
     date_created    DATE NOT NULL,
+    is_deleted      BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (sticker_id),
     FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
