@@ -94,7 +94,9 @@ stickersRouter.post("/create", upload.single("imageData"), async (req, res) => {
     const insertStickerText = "INSERT INTO sticker (account_id, name, description, date_created) VALUES ($1, $2, $3, $4) RETURNING sticker_id";
     const stickerRes = await client.query(insertStickerText, [ account_id, name, description, date_created ]);
     const sticker = stickerRes.rows[0];
-    await client.query( "INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
+    // default insert a 10 cm x 10 cm sticker until we have a sticker size field in frontend
+    await client.query("INSERT INTO sticker_sizes (length, width, sticker_id) VALUES ($1, $2, $3)", [10, 10, sticker.sticker_id]);
+    await client.query("INSERT INTO image_sticker (sticker_id, image_data) VALUES ($1, $2)", [sticker.sticker_id, image_data]);
     await client.query("COMMIT");
     return res.sendStatus(200);
   } catch (error) {
