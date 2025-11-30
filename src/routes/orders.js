@@ -32,11 +32,11 @@ ordersRouter.post("/", async (req, res) => {
 
     if (items && Array.isArray(items) && items.length) {
       for (const item of items) {
-        const { stickerId, materialId, colorId, quantity } = item;
+        const { stickerId, materialId, colorId, sizeId, quantity } = item;
 
-        if (!stickerId || !materialId || !colorId || !quantity) {
+        if (!stickerId || !materialId || !colorId || !quantity || !sizeId) {
           await client.query("ROLLBACK");
-          return res.status(400).json({ error: "Each item requires stickerId, materialId, colorId, and quantity" });
+          return res.status(400).json({ error: "Each item requires stickerId, materialId, colorId, sizeId, and quantity" });
         }
 
         const smSelect = `SELECT sticker_material_id FROM sticker_material WHERE sticker_id = $1 AND material_id = $2 AND color_id = $3`;
@@ -51,8 +51,8 @@ ordersRouter.post("/", async (req, res) => {
         }
 
         await client.query(
-          `INSERT INTO order_items (order_id, sticker_id, sticker_material_id) VALUES ($1, $2, $3)`,
-          [order.order_id, stickerId, stickerMaterialId]
+          `INSERT INTO order_items (order_id, sticker_id, sticker_material_id, sticker_size_id) VALUES ($1, $2, $3, $4)`,
+          [order.order_id, stickerId, stickerMaterialId, sizeId]
         );
       }
     }
