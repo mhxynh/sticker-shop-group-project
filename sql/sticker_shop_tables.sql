@@ -96,8 +96,10 @@ CREATE TABLE order_items (
     order_id            INTEGER,
     sticker_id          INTEGER,
     sticker_material_id INTEGER,
+    sticker_size_id     INTEGER,
     PRIMARY KEY (id),
     FOREIGN KEY (order_id) REFERENCES orders (order_id),
     FOREIGN KEY (sticker_id) REFERENCES sticker (sticker_id),
-    FOREIGN KEY (sticker_material_id) REFERENCES sticker_material (sticker_material_id)
+    FOREIGN KEY (sticker_material_id) REFERENCES sticker_material (sticker_material_id),
+    FOREIGN KEY (sticker_size_id) REFERENCES sticker_sizes (size_id)
 );
