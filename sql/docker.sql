@@ -4,16 +4,16 @@
 -- we'll need to update this every time we change the sql files (just copy and paste sticker_shop_tables.sql and insert.sql)
 CREATE TABLE account (
     account_id     SERIAL,
-    first_name      VARCHAR(100) NOT NULL,
-    middle_name     VARCHAR(100),
-    last_name       VARCHAR(100) NOT NULL,
-    email_address   VARCHAR(256) NOT NULL UNIQUE,
-    password_hash   VARCHAR(256) NOT NULL,
-    phone_number    VARCHAR(20) NOT NULL UNIQUE,
-    street          VARCHAR(100),
-    city            VARCHAR(50),
-    postal_code	    VARCHAR(20),
-    is_creator    BOOLEAN NOT NULL DEFAULT FALSE,
+    first_name     VARCHAR(100) NOT NULL,
+    middle_name    VARCHAR(100),
+    last_name      VARCHAR(100) NOT NULL,
+    email_address  VARCHAR(256) NOT NULL UNIQUE,
+    password_hash  VARCHAR(256) NOT NULL,
+    phone_number   VARCHAR(20) NOT NULL UNIQUE,
+    street         VARCHAR(100),
+    city           VARCHAR(50),
+    postal_code	   VARCHAR(20),
+    is_creator     BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (account_id)
 );
 
@@ -31,6 +31,7 @@ CREATE TABLE sticker (
     name            VARCHAR(64) NOT NULL,
     description	    VARCHAR(256),
     date_created    DATE NOT NULL,
+    is_deleted      BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (sticker_id),
     FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
@@ -88,7 +89,7 @@ CREATE TABLE sticker_material (
 
 CREATE TABLE orders (
     order_id	SERIAL,
-    account_id INTEGER,
+    account_id  INTEGER,
     PRIMARY KEY (order_id),
     FOREIGN KEY (account_id) REFERENCES account (account_id)
 );
