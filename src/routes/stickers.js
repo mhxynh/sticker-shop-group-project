@@ -6,7 +6,7 @@ const upload = multer();
 
 const stickersRouter = express.Router();
 
-const getStickerbyId = async (id) => {
+export const getStickerbyId = async (id) => {
   const materials = await db.query("SELECT * FROM materials");
   const colors = await db.query("SELECT * FROM colors");
   const sizes = await db.query("SELECT * FROM sticker_sizes WHERE sticker_id = $1", [id]);
