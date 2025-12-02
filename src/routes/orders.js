@@ -105,7 +105,6 @@ ordersRouter.post("/", async (req, res) => {
 
 ordersRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  try {
     const client = await db.getClient();
     try {
       await client.query("BEGIN");
@@ -119,15 +118,11 @@ ordersRouter.delete("/:id", async (req, res) => {
       await client.query("COMMIT");
       res.sendStatus(204);
     } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
+        await client.query("ROLLBACK");
+        throw err;
     } finally {
-      client.release();
+        client.release();
     }
-  } catch (err) {
-    console.error("Error deleting order:", err);
-    res.sendStatus(500);
-  }
 });
 
 ordersRouter.get("/:accountId/:orderId", async (req, res) => {
